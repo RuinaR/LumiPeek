@@ -1,5 +1,5 @@
 param([string]$SdkHome, [string]$JdkHome = $env:JAVA_HOME,
-    [ValidateSet('1.5.1','1.5.0')][string]$ExpectedSdk = '1.5.1')
+    [ValidateSet('1.5.1','1.5.0')][string]$ExpectedSdk = '1.5.1', [string]$PluginPackage)
 $ErrorActionPreference = 'Stop'
 if (-not $SdkHome -or -not (Test-Path -LiteralPath (Join-Path $SdkHome 'sdk.json'))) {
     Write-Output 'BLOCKED: provide an official Little LUMI SDK 1.5.1 distribution with sdk.json and lib/Shimeji-ee.jar'
@@ -34,3 +34,16 @@ if ($LASTEXITCODE -ne 0) { throw 'SDK probe compilation failed' }
 if ($LASTEXITCODE -ne 0) { throw 'SDK smoke failed' }
 & (Join-Path $JdkHome 'bin/java.exe') '-Djava.awt.headless=true' "-Djava.io.tmpdir=$temp" --add-modules jdk.httpserver -cp "$output;$sdkClasspath" io.lumipeek.sdk.OllamaTests
 if ($LASTEXITCODE -ne 0) { throw 'Fake Ollama checks failed' }
+$featureCp="$output;$sdkClasspath"
+$featureArgs=@()
+if ($PluginPackage) {
+    # This emulates the documented adjacent-native layout, not the real SDK protected loader.
+    $protected=Join-Path $output 'simulated-protected'
+    New-Item -ItemType Directory -Path $protected -Force | Out-Null
+    Copy-Item -LiteralPath (Join-Path $PluginPackage 'plugins/lumipeek.jar') -Destination $protected
+    Copy-Item -LiteralPath (Join-Path $PluginPackage 'native') -Destination $protected -Recurse
+    $featureCp=(Join-Path $protected 'lumipeek.jar')+';'+$featureCp
+    $featureArgs=@('worker')
+}
+& (Join-Path $JdkHome 'bin/java.exe') '-Djava.awt.headless=true' "-Djava.io.tmpdir=$temp" --enable-native-access=ALL-UNNAMED -Xcheck:jni --add-modules jdk.httpserver -cp $featureCp io.lumipeek.sdk.FeatureTests @featureArgs
+if ($LASTEXITCODE -ne 0) { throw 'Feature integration checks failed' }

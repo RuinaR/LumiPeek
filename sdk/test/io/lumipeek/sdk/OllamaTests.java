@@ -109,10 +109,14 @@ public final class OllamaTests {
                 check(client.version(TWO).get(4,TimeUnit.SECONDS).equals("0.12.7-test"));
             }
             check(client.awaitStopped(Duration.ofSeconds(3)));
-            fake.mode=5; fake.entered=new CountDownLatch(1);
-            LocalOllama timed=new LocalOllama(fake.endpoint(),MODEL);
-            try(timed) { failure(timed.analyze(photo,Duration.ofMillis(200)),TIMEOUT); }
-            check(timed.awaitStopped(Duration.ofSeconds(3)));
+            // A new client must not reset the first server's uncertain-work latch.
+            // Use a separate synthetic server to exercise an independent timeout.
+            try(Fake timedServer=new Fake()) {
+                timedServer.mode=5;
+                LocalOllama timed=new LocalOllama(timedServer.endpoint(),MODEL);
+                try(timed) { failure(timed.analyze(photo,Duration.ofMillis(200)),TIMEOUT); }
+                check(timed.awaitStopped(Duration.ofSeconds(3)));
+            }
             check(fake.unexpected.get()==0);
         }
         System.out.println("PASS: loopback fake Ollama "+passed+" assertions (no real model)");

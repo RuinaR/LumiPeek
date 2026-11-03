@@ -1,9 +1,9 @@
 {
-  "id": "lumipeek.probe",
-  "name": "LumiPeek compatibility probe",
-  "version": "0.1.0",
+  "id": "lumipeek",
+  "name": "LumiPeek",
+  "version": "0.2.0-dev",
   "api_version": 1,
-  "affects_character": false,
-  "network": false,
-  "description": "Read-only SDK 1.5.0 fake-context probe; no real-app verification or photo runtime."
+  "affects_character": true,
+  "network": true,
+  "description": "사용자가 허용한 사진의 로컬 AI 감상. 자동 감상·미리보기는 기본 OFF. SDK 1.5.0 모의 검증, 실앱 미검증."
 }
