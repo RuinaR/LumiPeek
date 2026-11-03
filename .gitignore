@@ -1,0 +1,44 @@
+# Keep this repository for source/tests/resources and the single public README.
+# Local AI instructions, planning, progress, QA, and handoffs are never committed.
+AGENTS.md
+DEVELOPMENT-PLAN.md
+CODEX-START-PROMPT.md
+.ai-local/
+**/AGENTS.md
+**/*WORKLOG*.md
+**/*CURRENT-STATUS*.md
+**/*HANDOFF*.md
+**/*AI-INSTRUCTIONS*.md
+**/*QA-REPORT*.md
+**/*DEVELOPMENT-PLAN*.md
+**/*CODEX*PROMPT*.md
+**/internal-docs/
+**/private-docs/
+**/ai-notes/
+
+# Runtime data and private images
+plugindata/
+cache/
+private/
+user-images/
+*.log
+*.trace
+*.tmp
+.env
+.env.*
+*.key
+*.pem
+
+# Java/IDE/build artifacts
+.gradle/
+.idea/
+.vscode/
+build/
+out/
+target/
+*.class
+*.jar
+*.zip
+*.iml
+.DS_Store
+Thumbs.db
