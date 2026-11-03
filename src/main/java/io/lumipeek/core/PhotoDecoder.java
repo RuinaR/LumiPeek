@@ -9,7 +9,7 @@ import javax.imageio.*;
 import javax.imageio.stream.MemoryCacheImageInputStream;
 import static io.lumipeek.core.Failure.Code.*;
 
-/** Built-in PNG/JPEG only; output is a fresh metadata-free, bounded PNG. */
+/** Worker-only primitive. Production callers use IsolatedPhotos, never decode in the host JVM. */
 public final class PhotoDecoder {
     public static final long MAX_PIXELS = 30_000_000;
     public byte[] decode(byte[] source, String extension, Duration budget) throws Failure {

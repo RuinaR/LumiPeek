@@ -21,6 +21,16 @@ $fixtureCompile = if ($TestFixtures) {
     "cl /nologo /c /std:c++17 /EHsc /MT /W4 /WX /O2 /GS /guard:cf /sdl /permissive- /I`"$JdkHome/include`" /I`"$JdkHome/include/win32`" /Fo`"$output/tests.obj`" `"$root/native/windows/tests.cpp`"`r`nif errorlevel 1 exit /b 1"
 } else { '' }
 $fixtureObject = if ($TestFixtures) { "`"$output/tests.obj`"" } else { '' }
+$workerObjects = @"
+cl /nologo /c /std:c++17 /EHsc /MT /W4 /WX /O2 /GS /guard:cf /sdl /permissive- $define $analysis /I"$JdkHome/include" /I"$JdkHome/include/win32" /Fo"$output/worker.obj" "$root/native/windows/worker.cpp"
+if errorlevel 1 exit /b 1
+link /nologo /DLL /MACHINE:X64 /DYNAMICBASE /NXCOMPAT /GUARD:CF /OUT:"$output/lumipeek-worker.dll" "$output/worker.obj" kernel32.lib
+if errorlevel 1 exit /b 1
+dumpbin /nologo /exports "$output/lumipeek-worker.dll" > "$output/worker-exports.txt"
+if errorlevel 1 exit /b 1
+dumpbin /nologo /dependents "$output/lumipeek-worker.dll" > "$output/worker-dependencies.txt"
+if errorlevel 1 exit /b 1
+"@
 $batch = @"
 @echo off
 call "$VcVars" >nul
@@ -34,6 +44,7 @@ dumpbin /nologo /exports "$output/lumipeek-files.dll" > "$output/exports.txt"
 if errorlevel 1 exit /b 1
 dumpbin /nologo /dependents "$output/lumipeek-files.dll" > "$output/dependencies.txt"
 if errorlevel 1 exit /b 1
+$workerObjects
 exit /b 0
 "@
 $batchPath = Join-Path $output 'compile.cmd'
@@ -51,4 +62,9 @@ $dlls = @([regex]::Matches($dependencies, '(?im)^\s+([a-z0-9_.-]+\.dll)\s*$') | 
 if ($dlls.Count -ne 2 -or $dlls -notcontains 'kernel32.dll' -or $dlls -notcontains 'ntdll.dll') {
     throw 'Unexpected native dependency'
 }
+$workerExports = Get-Content -LiteralPath (Join-Path $output 'worker-exports.txt') -Raw
+if (-not $TestFixtures -and $workerExports -match 'WorkerFault') { throw 'Worker test exports leaked' }
+$workerDependencies = Get-Content -LiteralPath (Join-Path $output 'worker-dependencies.txt') -Raw
+$workerDlls = @([regex]::Matches($workerDependencies, '(?im)^\s+([a-z0-9_.-]+\.dll)\s*$') | ForEach-Object { $_.Groups[1].Value.ToLowerInvariant() })
+if ($workerDlls.Count -ne 1 -or $workerDlls[0] -ne 'kernel32.dll') { throw 'Unexpected supervisor dependency' }
 Write-Output "PASS: Windows x64 native build ($kind)"
