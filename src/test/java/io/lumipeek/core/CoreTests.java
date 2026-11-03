@@ -27,9 +27,10 @@ public final class CoreTests {
     }
     public static void main(String[] args) throws Exception {
         check(java.awt.GraphicsEnvironment.isHeadless());
+        if (args.length == 1) WindowsFiles.initialize(Path.of(args[0]));
         Path sandbox = Files.createTempDirectory(Path.of("build"), "synthetic-").toAbsolutePath();
         try {
-            folders(sandbox);
+            folders(sandbox, args.length == 1);
             decoding();
             reactions();
             queue();
@@ -41,7 +42,7 @@ public final class CoreTests {
         }
         System.out.println("PASS: " + passed + " assertions (headless, synthetic data)");
     }
-    private static void folders(Path temp) throws Exception {
+    private static void folders(Path temp, boolean nativeEnabled) throws Exception {
         Path root = Files.createDirectory(temp.resolve("granted"));
         Path outside = temp.resolve("outside.png");
         byte[] original = image("png", 20, 10);
@@ -49,12 +50,11 @@ public final class CoreTests {
         Path photo = Files.write(root.resolve("one.PNG"), original);
         Files.writeString(root.resolve("secret.txt"), "synthetic");
         Files.write(Files.createDirectory(root.resolve("nested")).resolve("two.jpg"), image("jpeg", 8, 8));
-        if (Files.readAttributes(root, java.nio.file.attribute.BasicFileAttributes.class,
-                LinkOption.NOFOLLOW_LINKS).fileKey() == null) {
+        if (!nativeEnabled) {
             failure(PATH_DENIED, () -> new PhotoFolder(root));
             failure(PATH_DENIED, () -> new PhotoFolder(Path.of("relative")));
-            System.out.println("BLOCKED: filesystem supplies no stable fileKey; folder access fails closed");
-            System.out.println("NOT VERIFIED: traversal/read/link fixtures require a supported filesystem");
+            System.out.println("BLOCKED: native boundary not initialized; folder access fails closed");
+            System.out.println("NOT VERIFIED: use -WindowsBoundary for native filesystem fixtures");
             return;
         }
         PhotoFolder folder = new PhotoFolder(root);

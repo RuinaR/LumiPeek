@@ -39,6 +39,11 @@ target/
 *.class
 *.jar
 *.zip
+*.dll
+*.obj
+*.lib
+*.exp
+*.pdb
 *.iml
 .DS_Store
 Thumbs.db
