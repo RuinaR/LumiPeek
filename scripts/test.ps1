@@ -1,0 +1,16 @@
+param([string]$JdkHome = $env:JAVA_HOME)
+$ErrorActionPreference = 'Stop'
+if (-not $JdkHome -or -not (Test-Path -LiteralPath (Join-Path $JdkHome 'bin/javac.exe'))) {
+    throw 'Set JAVA_HOME or pass -JdkHome with an installed JDK 17 or newer.'
+}
+$root = Split-Path -Parent $PSScriptRoot
+$classes = Join-Path $root ('build/check-' + [Guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $classes -Force | Out-Null
+$sources = @(Get-ChildItem (Join-Path $root 'src') -Recurse -Filter '*.java' | ForEach-Object FullName)
+& (Join-Path $JdkHome 'bin/javac.exe') --release 17 -encoding UTF-8 -Xlint:all -Werror -d $classes @sources
+if ($LASTEXITCODE -ne 0) { throw 'Compilation failed' }
+Push-Location $root
+try {
+    & (Join-Path $JdkHome 'bin/java.exe') '-Djava.awt.headless=true' -cp $classes io.lumipeek.core.CoreTests
+} finally { Pop-Location }
+if ($LASTEXITCODE -ne 0) { throw 'Headless checks failed' }
