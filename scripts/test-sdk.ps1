@@ -16,6 +16,9 @@ $output = Join-Path $root ('build/sdk-smoke-' + [Guid]::NewGuid().ToString('N'))
 $temp = Join-Path $output 'temp'
 New-Item -ItemType Directory -Path $temp -Force | Out-Null
 $sources = @(Get-ChildItem (Join-Path $root 'sdk') -Recurse -Filter '*.java' | ForEach-Object FullName)
+$coreSources = @(Get-ChildItem (Join-Path $root 'src/main') -Recurse -Filter '*.java' | ForEach-Object FullName)
+& (Join-Path $JdkHome 'bin/javac.exe') --release 17 -encoding UTF-8 -Xlint:all -Werror -d $output @coreSources
+if ($LASTEXITCODE -ne 0) { throw 'Core dependency compilation failed' }
 # The SDK app JAR's manifest expects lib/ beside it. Preserve official bytes,
 # but build an isolated compiler view rather than suppress missing-path warnings.
 $view = Join-Path $output 'official-sdk'
@@ -24,8 +27,10 @@ New-Item -ItemType Directory -Path $viewLib -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $SdkHome 'lib/Shimeji-ee.jar') -Destination $view
 Get-ChildItem -LiteralPath (Join-Path $SdkHome 'lib') -Filter '*.jar' |
     Where-Object Name -ne 'Shimeji-ee.jar' | Copy-Item -Destination $viewLib
-$sdkClasspath = (Join-Path $view 'Shimeji-ee.jar') + ';' + (Join-Path $viewLib '*')
+$sdkClasspath = (Join-Path $view 'Shimeji-ee.jar') + ';' + (Join-Path $viewLib '*') + ';' + $output
 & (Join-Path $JdkHome 'bin/javac.exe') --release 25 -encoding UTF-8 -Xlint:all -Werror -cp $sdkClasspath -d $output @sources
 if ($LASTEXITCODE -ne 0) { throw 'SDK probe compilation failed' }
 & (Join-Path $JdkHome 'bin/java.exe') '-Djava.awt.headless=true' "-Djava.io.tmpdir=$temp" -cp "$output;$sdkClasspath" io.lumipeek.sdk.SdkSmoke $ExpectedSdk
 if ($LASTEXITCODE -ne 0) { throw 'SDK smoke failed' }
+& (Join-Path $JdkHome 'bin/java.exe') '-Djava.awt.headless=true' "-Djava.io.tmpdir=$temp" --add-modules jdk.httpserver -cp "$output;$sdkClasspath" io.lumipeek.sdk.OllamaTests
+if ($LASTEXITCODE -ne 0) { throw 'Fake Ollama checks failed' }

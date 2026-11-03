@@ -16,17 +16,19 @@ if ($LASTEXITCODE -ne 0) { throw 'Compilation failed' }
 Push-Location $root
 try {
     if ($WindowsBoundary) {
-        & (Join-Path $JdkHome 'bin/java.exe') '-Djava.awt.headless=true' --enable-native-access=ALL-UNNAMED -Xcheck:jni -cp $classes io.lumipeek.core.CoreTests (Join-Path $root 'build/native/lumipeek-files.dll')
+        & (Join-Path $JdkHome 'bin/java.exe') '-Djava.awt.headless=true' "-Djava.io.tmpdir=$classes" --enable-native-access=ALL-UNNAMED -Xcheck:jni -cp $classes io.lumipeek.core.CoreTests (Join-Path $root 'build/native/lumipeek-files.dll')
         if ($LASTEXITCODE -ne 0) { throw 'Core regressions failed' }
-        & (Join-Path $JdkHome 'bin/java.exe') '-Djava.awt.headless=true' --enable-native-access=ALL-UNNAMED -Xcheck:jni -cp $classes io.lumipeek.core.WindowsBoundaryTests (Join-Path $root 'build/native-test/lumipeek-files.dll')
+        & (Join-Path $JdkHome 'bin/java.exe') '-Djava.awt.headless=true' "-Djava.io.tmpdir=$classes" --enable-native-access=ALL-UNNAMED -Xcheck:jni -cp $classes io.lumipeek.core.WindowsBoundaryTests (Join-Path $root 'build/native-test/lumipeek-files.dll')
         if ($LASTEXITCODE -ne 0) { throw 'Windows boundary checks failed' }
-        & (Join-Path $JdkHome 'bin/java.exe') '-Djava.awt.headless=true' --enable-native-access=ALL-UNNAMED -Xcheck:jni -cp $classes io.lumipeek.core.IsolationTests (Join-Path $JdkHome 'bin/java.exe') $classes (Join-Path $root 'build/native') (Join-Path $root 'build/native-test')
+        & (Join-Path $JdkHome 'bin/java.exe') '-Djava.awt.headless=true' "-Djava.io.tmpdir=$classes" --enable-native-access=ALL-UNNAMED -Xcheck:jni -cp $classes io.lumipeek.core.IsolationTests (Join-Path $JdkHome 'bin/java.exe') $classes (Join-Path $root 'build/native') (Join-Path $root 'build/native-test')
         if ($LASTEXITCODE -ne 0) { throw 'Isolated pipeline checks failed' }
-        & (Join-Path $JdkHome 'bin/java.exe') '-Djava.awt.headless=true' --enable-native-access=ALL-UNNAMED -Xcheck:jni -cp $classes io.lumipeek.core.WorkerFaultTests (Join-Path $JdkHome 'bin/java.exe') $classes (Join-Path $root 'build/native-test/lumipeek-worker.dll')
+        & (Join-Path $JdkHome 'bin/java.exe') '-Djava.awt.headless=true' "-Djava.io.tmpdir=$classes" --enable-native-access=ALL-UNNAMED -Xcheck:jni -cp $classes io.lumipeek.core.WorkerFaultTests (Join-Path $JdkHome 'bin/java.exe') $classes (Join-Path $root 'build/native-test/lumipeek-worker.dll')
     } else {
-        & (Join-Path $JdkHome 'bin/java.exe') '-Djava.awt.headless=true' -cp $classes io.lumipeek.core.CoreTests
+        & (Join-Path $JdkHome 'bin/java.exe') '-Djava.awt.headless=true' "-Djava.io.tmpdir=$classes" -cp $classes io.lumipeek.core.CoreTests
     }
     if ($LASTEXITCODE -ne 0) { throw 'Regression checks failed' }
-    & (Join-Path $JdkHome 'bin/java.exe') '-Djava.awt.headless=true' -cp $classes io.lumipeek.core.WireTests
+    & (Join-Path $JdkHome 'bin/java.exe') '-Djava.awt.headless=true' "-Djava.io.tmpdir=$classes" -cp $classes io.lumipeek.core.WireTests
+    if ($LASTEXITCODE -ne 0) { throw 'IPC checks failed' }
+    & (Join-Path $JdkHome 'bin/java.exe') '-Djava.awt.headless=true' "-Djava.io.tmpdir=$classes" -cp $classes io.lumipeek.core.PresentationTests
 } finally { Pop-Location }
 if ($LASTEXITCODE -ne 0) { throw 'Headless checks failed' }

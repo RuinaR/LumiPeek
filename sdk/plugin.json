@@ -3,8 +3,7 @@
   "name": "LumiPeek compatibility probe",
   "version": "0.1.0",
   "api_version": 1,
-  "app_version": "1.5.1",
   "affects_character": false,
   "network": false,
-  "description": "Read-only, headless SDK compatibility probe; not the photo feature."
+  "description": "Read-only SDK 1.5.0 fake-context probe; no real-app verification or photo runtime."
 }

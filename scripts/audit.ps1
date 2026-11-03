@@ -14,6 +14,9 @@ try {
     $sources = @(Get-ChildItem -Path @((Join-Path $root 'src/main'), (Join-Path $root 'sdk/src')) -Recurse -Filter '*.java')
     $hits = @($sources | Select-String -Pattern $forbidden)
     foreach ($hit in $hits) {
+        # Network imports are isolated to the explicitly loopback-only Ollama adapter.
+        if ($hit.Path -eq (Join-Path $root 'sdk/src/io/lumipeek/sdk/LocalOllama.java') -and
+                $hit.Line -match '^import java\.net\.(\*|http\.\*);$') { continue }
         # The only native-loader exception: an explicitly supplied SDK-protected DLL.
         if ($hit.Path -eq (Join-Path $root 'src/main/java/io/lumipeek/core/WindowsFiles.java') -and
                 $hit.Line.Trim() -eq 'System.load(trustedLibrary.toString());') { continue }
